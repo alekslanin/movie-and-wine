@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1010176194732",
+    "project_id": "wine-and-movie",
+    "storage_bucket": "wine-and-movie.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1010176194732:android:91afc267098340ef634709",
+        "android_client_info": {
+          "package_name": "app.wam.wineandmovie"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZOPl7pQpFShCIOZrAGQh5wHvrs7b4M7Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,51 @@
+{
+  "flutter": {
+    "platforms": {
+      "ios": {
+        "default": {
+          "projectId": "wine-and-movie",
+          "appId": "1:1010176194732:ios:f0bf952528b82d2e634709",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "wine-and-movie",
+          "configurations": {
+            "android": "1:1010176194732:android:91afc267098340ef634709",
+            "ios": "1:1010176194732:ios:f0bf952528b82d2e634709"
+          }
+        }
+      },
+      "android": {
+        "default": {
+          "projectId": "wine-and-movie",
+          "appId": "1:1010176194732:android:91afc267098340ef634709",
+          "fileOutput": "android/app/google-services.json"
+        }
+      }
+    }
+  },
+  "emulators": {
+    "singleProjectMode": true,
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    },
+    "database": {
+      "port": 9000
+    },
+    "pubsub": {
+      "port": 8085
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    }
+  }
+}
