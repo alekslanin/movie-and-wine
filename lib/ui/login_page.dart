@@ -1,9 +1,12 @@
+import 'package:country_flags/country_flags.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 import 'package:wineandmovie/auth_service.dart';
-import 'package:wineandmovie/routing/names.dart';
-import 'package:wineandmovie/routing/router.dart';
+import 'package:wineandmovie/notification_service.dart';
+import 'package:wineandmovie/ui/email_pass_validators.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -12,19 +15,19 @@ class LoginPage extends ConsumerStatefulWidget {
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> with EmailPassValidators {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _loading = false;
-  bool _isValid = false;
+  //bool _isValid = false;
 
   @override
   void initState() {
     super.initState();
-    _emailController.addListener(_updateValidity);
-    _passwordController.addListener(_updateValidity);
-    _updateValidity();
+    // _emailController.addListener(_updateValidity);
+    // _passwordController.addListener(_updateValidity);
+    // _updateValidity();
   }
 
   @override
@@ -34,23 +37,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _signIn() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _signIn(String emaail, String pwd) async {
+    //if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
 
-String message = 'N/A';
+    String message = 'N/A';
 
     try {
-      await authService.value.signIn
+      await AuthService().signIn
       (
-        _emailController.text.trim(), 
-        _passwordController.text
+        emaail, 
+        pwd
       );
-      message = 'Login successful.';
+      message = 'Login successful for ${_emailController.text.trim()}';
+      Logger().i(message);
+      if (mounted) {
+        context.goNamed('wine');
+        //AppRouter.pushReplacement(context, RoutingNames.wine);  // TODO: fix me
+      }
     } on FirebaseAuthException catch (e) {
-        print(e.code);
-        print(e.message);
+        Logger().e(e.code);
+        Logger().e(e.message);
       message = e.message ?? 'Login failed.';
     } catch (_) {
       if(mounted) {
@@ -64,92 +72,108 @@ String message = 'N/A';
     }
   }
 
-  void _updateValidity() {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    final emailValid = RegExp(r"^[^@\s]+@[^@\s]+\.[^@\s]+$").hasMatch(email);
-    final valid = email.isNotEmpty && emailValid && password.length >= 6;
-    if (mounted && valid != _isValid) setState(() => _isValid = valid);
-  }
-
-  bool _isEmailValid() {
-    final email = _emailController.text.trim();
-    return email.isNotEmpty && RegExp(r"^[^@\s]+@[^@\s]+\.[^@\s]+$").hasMatch(email);
-  }
-
-  bool _isPasswordValid() {
-    final password = _passwordController.text;
-    return password.length >= 6;
-  }
-
   void _goToRegister() {
-    AppRouter.pushReplacement(context, RoutingNames.register);
+    context.goNamed('register');
+     //AppRouter.pushReplacement(context, RoutingNames.register);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Sign in')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      helperText: _isEmailValid() ? null : 'Enter a valid email address',
-                    ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Enter your email';
-                      if (!RegExp(r"^[^@\s]+@[^@\s]+\.[^@\s]+$").hasMatch(v)) return 'Enter a valid email';
-                      return null;
-                    },
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 70, top: 12),
+            child: Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                onPressed: () => {Logger().i('japan pressed')},
+                isSelected: false,
+                icon:  CountryFlag.fromCountryCode(
+                            'JP',
+                            theme: const ImageTheme(width: 24, height: 16, shape: RoundedRectangle(3),),
+                          )
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      helperText: _isPasswordValid() ? '' : 'Minimum 6 characters',
-                    ),
-                    obscureText: true,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Enter your password';
-                      if (v.length < 6) return 'Password must be at least 6 characters';
-                      return null;
-                    },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 30, top: 12),
+            child: Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                onPressed: () => {Logger().i('usa pressed')},
+                isSelected: true,
+                icon:  CountryFlag.fromCountryCode(
+                            'US',
+                            theme: const ImageTheme(width: 24, height: 16, shape: RoundedRectangle(3),),
+                          )
                   ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: (_loading || !_isValid) ? null : _signIn,
-                      child: _loading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Sign in'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            ),
+          ),
+         
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text("Don't have an account? "),
-                      TextButton(onPressed: _loading ? null : _goToRegister, child: const Text('Register')),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          //helperText: _isEmailValid() ? null : 'Enter a valid email address',
+                        ),
+                        validator: validateEmail,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          //helperText: _isPasswordValid() ? '' : 'Minimum 6 characters',
+                        ),
+                        obscureText: true,
+                        validator: validatePassword,
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // make sure the form is valid
+                            // before submitting
+                            if (_formKey.currentState!.validate()) {
+                              _signIn(_emailController.text.trim(), _passwordController.text.trim());
+                            }
+                          },
+                          //onPressed: (_loading || !_isValid) ? null : _signIn,
+                          child: _loading
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Text('Sign in'),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Don't have an account? "),
+                          TextButton(onPressed: _loading ? null : _goToRegister, child: const Text('Register')),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

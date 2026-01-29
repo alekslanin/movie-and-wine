@@ -1,12 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 import 'package:wineandmovie/firebase_options.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wineandmovie/local_notifications_service.dart';
+import 'package:wineandmovie/notification_service.dart';
 import 'package:wineandmovie/routing/router.dart';
-import 'package:wineandmovie/ui/themes.dart';
+import 'package:wineandmovie/timer_service.dart';
+
 
 Future<void> main() async {
 
@@ -21,11 +25,18 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );  
 
+  final localNotificationService = LocalNotificationsService();
+  await localNotificationService.init();
+
+  final notificationService = FirebaseNotificationService();
+  notificationService.init(localService: localNotificationService);
+
+  TimerService().start();
+
   //if(kDebugMode) {
-    print('Firebase initialized with options: ${DefaultFirebaseOptions.currentPlatform}');
+    Logger().i('Firebase initialized with options: ${DefaultFirebaseOptions.currentPlatform}');
   //  await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
   //} 
-
   
   runApp(const ProviderScope(
       // You can customize the retry logic, such as to skip
@@ -51,8 +62,8 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router( // Use MaterialApp.router when using go_router
       title: 'Wine & Movies',
-      theme: theme,
-      routerConfig: AppRouter.router,
+      theme: ThemeData(useMaterial3: false),
+      routerConfig: ref.watch(router),
       debugShowCheckedModeBanner: false,
     );
   }

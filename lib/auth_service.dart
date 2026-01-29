@@ -1,11 +1,36 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+//import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:logger/logger.dart';
 
-ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
+final authStateProvider = ChangeNotifierProvider<AuthState>(
+   (ref) => AuthState(),
+);
 
+class AuthState extends ChangeNotifier {
+  static final AuthState _instance = AuthState._internal();
+
+  AuthState._internal();
+
+  factory AuthState() {
+    return _instance;
+  }
+
+  bool _isUserLoggedIn = false;
+
+  bool isUserLoggedIn () => _isUserLoggedIn;
+
+  void set(bool status) {
+    _isUserLoggedIn = status;
+    Logger().i('notify LOGGIN STATUS as $_isUserLoggedIn');
+    notifyListeners();
+  }
+}
 
 class AuthService {
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
@@ -18,9 +43,11 @@ class AuthService {
   void _initialize() {
     _auth.authStateChanges().listen((User? user) {
       if (user == null) {
-        print('User is currently signed out!');
+        AuthState().set(false);
+        Logger().i('User is currently signed out!');
       } else {
-        print('User is signed in!');
+        AuthState().set(true);
+        Logger().i('User is signed in!');
       }
     });
   }
@@ -31,8 +58,10 @@ class AuthService {
         email: email,
         password: password,
       );
+      AuthState().set(true);
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
+      AuthState().set(false);
       throw Exception(e.message);
     }
   }
@@ -50,6 +79,7 @@ class AuthService {
   } 
 
   Future<void> signOut() async {
+    AuthState().set(false);
     await _auth.signOut();
   }
 
@@ -68,7 +98,8 @@ class AuthService {
       throw Exception(e.message);
     }
   } 
-Future<void> deleteAccount(String password) async {
+
+  Future<void> deleteAccount(String password) async {
     try {
       AuthCredential credential = EmailAuthProvider.credential(
         email: _auth.currentUser!.email!,

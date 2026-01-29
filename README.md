@@ -79,6 +79,11 @@ flutter build <build-target> \
    --obfuscate \
    --split-debug-info=/<symbols-directory>
 
+BUILD-TARGET :: ipa for apple and appbundle for android
+
+To DEPLOY on Android : drag and drop into google play console 
+To DEPLOY on IOS : use Transporter app. Drag and drop ipa file into Transporter, then deliver it. App will be available in the Test Flight 
+
 
 ## obfuscate dart code
 https://docs.flutter.dev/deployment/obfuscate
@@ -134,3 +139,23 @@ Widget build(BuildContext context)  => Widget build(BuildContext context, Widget
 
 ref.watch(riverpod).name
 ref.read(riverpod).chamgeName(newValue: value)
+
+
+
+Apple Push Notifications
+
+create profile add device UDID(s) to profile
+
+create APNs key
+
+    Name:push notification
+    Key ID:6ZZQY329FC
+    Services:Apple Push Notifications service (APNs)
+
+open xCode add Push Notification and Backgroud Mode (select Background fetch and Remove notification) capabilities
+
+
+Name:APNS Push Notifications
+Key ID:G56A9SX83D
+Services:Apple Push Notifications service (APNs)
+

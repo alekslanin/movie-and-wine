@@ -1,10 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:wineandmovie/auth_service.dart';
-import 'package:wineandmovie/routing/names.dart';
-import 'package:wineandmovie/routing/router.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -74,15 +72,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     String message = 'N/A';
 
     try {
-      await authService.value.register
+      await AuthService().register
       (
         _emailController.text.trim(), 
         _passwordController.text
       );
       message = 'Registration successful. You can now log in.';
+      Logger().i(message);
+
     } on FirebaseAuthException catch (e) {
-        print(e.code);
-        print(e.message);
+        Logger().e(e.code);
+        Logger().e(e.message);
       message = e.message ?? 'Registration failed.';
     } catch (_) {
       if(mounted) {
