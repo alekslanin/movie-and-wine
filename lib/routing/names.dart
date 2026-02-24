@@ -5,4 +5,5 @@ enum RoutingNames {
   forgotPassword,
   movie,
   wine,
+  balance,
 }

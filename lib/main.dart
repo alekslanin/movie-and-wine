@@ -25,13 +25,13 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );  
 
-  final localNotificationService = LocalNotificationsService();
-  await localNotificationService.init();
+  // final localNotificationService = LocalNotificationsService();
+  // await localNotificationService.init();
 
-  final notificationService = FirebaseNotificationService();
-  notificationService.init(localService: localNotificationService);
+  // final notificationService = FirebaseNotificationService();
+  // notificationService.init(localService: localNotificationService);
 
-  TimerService().start();
+  // TimerService().start();
 
   //if(kDebugMode) {
     Logger().i('Firebase initialized with options: ${DefaultFirebaseOptions.currentPlatform}');

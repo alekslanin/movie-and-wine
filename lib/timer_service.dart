@@ -20,7 +20,7 @@ class TimerService {
     Logger().i('timer service started');
     
     timer = Timer.periodic(
-        const Duration(seconds: 55),
+        const Duration(seconds: 120),
         (Timer t) {
           if(AuthState().isUserLoggedIn()) {
             Logger().i("Forces sign out");

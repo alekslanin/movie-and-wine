@@ -3,36 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wineandmovie/auth_service.dart';
 import 'package:wineandmovie/routing/names.dart';
+import 'package:wineandmovie/ui/account_balances_page.dart';
 import 'package:wineandmovie/ui/login_page.dart';
 import 'package:wineandmovie/ui/register_page.dart';
 import 'package:wineandmovie/ui/wine_page.dart';
-
-// class AppRouter {
-
-//   /*
-//   * Navigate to a named route
-//   * as : await AppRouter.goTo(context, RoutingNames.login, params: {'id': '123'});
-//   * or : AppRouter.goTo(context, RoutingNames.login) or AppRouter.goTo(RoutingNames.login, params: {'id': '123'});
-//   */
-//   static Future<T?> pushReplacement<T>(
-//     dynamic context, 
-//     RoutingNames routeName, { 
-//       Map<String, String> params = const {},
-//     }
-//     ) {
-//     //return GoRouter.of(AppRouter.router.routerDelegate.navigatorKey.currentContext!).pushNamed<T>(routeName.name, pathParameters: params);
-//     return GoRouter.of(context).pushReplacementNamed<T>(routeName.name, pathParameters: params);
-//   }
-
-//   static Future<T?> push<T>(
-//     dynamic context, 
-//     RoutingNames routeName, { 
-//       Map<String, String> params = const {},
-//     }
-//     ) {
-//     //return GoRouter.of(AppRouter.router.routerDelegate.navigatorKey.currentContext!).pushNamed<T>(routeName.name, pathParameters: params);
-//     return GoRouter.of(context).pushNamed<T>(routeName.name, pathParameters: params);
-//   }
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
     debugLabel: 'root',
@@ -60,7 +34,7 @@ final router = Provider<GoRouter>((ref) {
       return null;
     },
     
-    initialLocation: '/auth',
+    initialLocation: '/balance',
     navigatorKey: _rootNavigatorKey,
     debugLogDiagnostics: true,
     routes: [
@@ -79,6 +53,11 @@ final router = Provider<GoRouter>((ref) {
         name: RoutingNames.wine.name,
         path: '/',
         builder: (context, state) => const WinePage(),
+      ),
+      GoRoute( // main landing page after login
+        name: RoutingNames.balance.name,
+        path: '/balance',
+        builder: (context, state) => const AccountBalancesPage(),
       ),
     ],
   );

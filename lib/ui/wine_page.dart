@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import 'package:star_menu/star_menu.dart';
 import 'package:wineandmovie/auth_service.dart';
@@ -35,7 +36,8 @@ class WinePage extends StatelessWidget {
     final otherEntries = <Widget>[
       FloatingActionButton(
         onPressed: () => {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('star menu button clicked'))),
+          context.goNamed('balance'),
+          //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('star menu button clicked'))),
           starMenuController.closeMenu!(),
         },
         backgroundColor: Colors.black,
