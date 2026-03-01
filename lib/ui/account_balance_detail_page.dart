@@ -48,6 +48,7 @@ class AccountBalanceDetailPage extends StatefulWidget {
 class _AccountBalanceDetailPageState extends State<AccountBalanceDetailPage> {
   final Set<int> _expanded = {0}; // CHECK row expanded by default like the image
   bool _showCurrentDay = true; // current day selected by default (matches image)
+  bool _isFilterOpen = false;
 
   static const _transactions = [
     TransactionEntry(
@@ -212,27 +213,51 @@ class _AccountBalanceDetailPageState extends State<AccountBalanceDetailPage> {
             showCurrentDay: _showCurrentDay,
             onToggle: (val) => setState(() => _showCurrentDay = val),
           ),
-          // 3 ── Records + Stats
-          _RecordsAndStats(
-            currency: _showCurrentDay ? acc.currCurrency : acc.prevCurrency,
-            recordCount: _transactions.length,
-            showCurrentDay: _showCurrentDay,
-          ),
-          // 4 ── Transaction list
+          // 3 & 4 ── Records, Stats + Transaction list (Wrapped in Stack for filter overlay)
           Expanded(
-            child: ListView.separated(
-              padding: EdgeInsets.zero,
-              itemCount: _transactions.length,
-              separatorBuilder: (_, __) =>
-                  const Divider(height: 1, color: Color(0xFFD0D5DE)),
-              itemBuilder: (context, i) {
-                final tx = _transactions[i];
-                return _TxRow(
-                  tx: tx,
-                  expanded: _expanded.contains(i),
-                  onToggle: () => _toggle(i),
-                );
-              },
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    _RecordsAndStats(
+                      currency: _showCurrentDay ? acc.currCurrency : acc.prevCurrency,
+                      recordCount: _transactions.length,
+                      showCurrentDay: _showCurrentDay,
+                      isFilterOpen: _isFilterOpen,
+                      onFilterTap: () => setState(() => _isFilterOpen = !_isFilterOpen),
+                    ),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: EdgeInsets.zero,
+                        itemCount: _transactions.length,
+                        separatorBuilder: (_, __) =>
+                            const Divider(height: 1, color: Color(0xFFD0D5DE)),
+                        itemBuilder: (context, i) {
+                          final tx = _transactions[i];
+                          return _TxRow(
+                            tx: tx,
+                            expanded: _expanded.contains(i),
+                            onToggle: () => _toggle(i),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                if (_isFilterOpen)
+                  Positioned(
+                    top: 56, // just below the "Showing N records" bar
+                    left: 16,
+                    right: 16,
+                    bottom: 16, // prevent overflow
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: _FilterPanel(
+                        onClose: () => setState(() => _isFilterOpen = false),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -517,11 +542,15 @@ class _RecordsAndStats extends StatelessWidget {
     required this.currency,
     required this.recordCount,
     required this.showCurrentDay,
+    required this.isFilterOpen,
+    required this.onFilterTap,
   });
 
   final String currency;
   final int recordCount;
   final bool showCurrentDay;
+  final bool isFilterOpen;
+  final VoidCallback onFilterTap;
 
   @override
   Widget build(BuildContext context) {
@@ -544,7 +573,11 @@ class _RecordsAndStats extends StatelessWidget {
                 _CircleIconButton(icon: Icons.sort, onTap: () {}),
                 const SizedBox(width: 8),
                 // Filter icon button
-                _CircleIconButton(icon: Icons.filter_alt_outlined, onTap: () {}),
+                _CircleIconButton(
+                  icon: Icons.filter_alt_outlined, 
+                  isActive: isFilterOpen,
+                  onTap: onFilterTap,
+                ),
               ],
             ),
           ),
@@ -576,22 +609,23 @@ class _RecordsAndStats extends StatelessWidget {
 }
 
 class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon, required this.onTap});
+  const _CircleIconButton({required this.icon, required this.onTap, this.isActive = false});
   final IconData icon;
   final VoidCallback onTap;
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 42,
-        height: 42,
-        decoration: const BoxDecoration(
-          color: Color(0xFFCCCCCC),
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF333333) : const Color(0xFFCCCCCC),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 22, color: const Color(0xFF3C3C3E)),
+        child: Icon(icon, size: 22, color: isActive ? Colors.white : const Color(0xFF3C3C3E)),
       ),
     );
   }
@@ -631,6 +665,233 @@ class _StatRow extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Filter Panel Overlay
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FilterPanel extends StatelessWidget {
+  const _FilterPanel({required this.onClose});
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Little white arrow pointing up
+        Padding(
+          padding: const EdgeInsets.only(right: 6.0),
+          child: CustomPaint(
+            size: const Size(16, 8),
+            painter: _UpTrianglePainter(color: Colors.white),
+          ),
+        ),
+        // Filter card
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF2F2F7), // very light grey background matching image inner card background
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. Transaction Type
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Transaction Type',
+                              style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Select transaction type',
+                              style: TextStyle(color: Color(0xFF8E8E93), fontSize: 15),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(width: 1, height: 40, color: const Color(0xFFE5E5EA)),
+                    const SizedBox(
+                      width: 40,
+                      child: Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // 2. Date Range
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Date Range',
+                      style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(child: _buildInput('From', Icons.calendar_today)),
+                        const SizedBox(width: 8),
+                        Expanded(child: _buildInput('To', Icons.calendar_today)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 3. Amount Range
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Select Amount USD Range',
+                      style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFD8D8D8)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              child: Text('Min', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 15)),
+                            ),
+                          ),
+                          Container(width: 1, height: 30, color: const Color(0xFFD8D8D8)),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              child: Text('Max', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 15)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Buttons
+              Row(
+                children: [
+                  _buildBtn('Close', false, onClose),
+                  const SizedBox(width: 8),
+                  _buildBtn('Clear All', false, () {}),
+                  const Spacer(),
+                  _buildBtn('Apply', true, onClose),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInput(String hint, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFD8D8D8)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(hint, style: const TextStyle(color: Color(0xFF8E8E93), fontSize: 15)),
+          Icon(icon, size: 18, color: Colors.black87),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBtn(String text, bool isDark, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF333333) : Colors.white,
+          borderRadius: BorderRadius.circular(6),
+          border: isDark ? null : Border.all(color: const Color(0xFFD8D8D8)),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UpTrianglePainter extends CustomPainter {
+  const _UpTrianglePainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, size.height)
+        ..lineTo(size.width / 2, 0)
+        ..lineTo(size.width, size.height)
+        ..close(),
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_UpTrianglePainter old) => old.color != color;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
